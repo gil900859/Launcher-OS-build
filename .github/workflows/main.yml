@@ -38,7 +38,6 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Install Vulkan SDK
-      @vulkan-sdk/vulkan-sdk-action:
       uses: humbletim/setup-vulkan-sdk@v1.2.0
       with:
         vulkan-query-version: latest
