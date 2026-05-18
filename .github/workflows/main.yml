@@ -15,15 +15,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Use Kitware's official APT repository to get the absolute latest CMake (4.x+)
-    - name: Install Latest CMake & Dependencies
+    # Direct binary installation bypasses APT package locks entirely
+    - name: Install Latest CMake (4.x+)
+      run: |
+        wget https://github.com/Kitware/CMake/releases/download/v4.0.0-rc3/cmake-4.0.0-rc3-linux-x86_64.tar.gz
+        tar -xzf cmake-4.0.0-rc3-linux-x86_64.tar.gz
+        echo "$GITHUB_WORKSPACE/cmake-4.0.0-rc3-linux-x86_64/bin" >> $GITHUB_PATH
+
+    - name: Install Dependencies & Vulkan SDK
       run: |
         sudo apt-get update
-        sudo apt-get install -y software-properties-common lsb-release
-        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
-        sudo apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
-        sudo apt-get update
-        sudo apt-get install -y cmake build-essential libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libvulkan-dev vulkan-tools
+        sudo apt-get install -y build-essential libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libvulkan-dev vulkan-tools
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
@@ -42,10 +44,10 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    # Install official Vulkan SDK via Windows Package Manager (winget)
-    - name: Install Vulkan SDK via Winget
+    # Chocolatey is pre-configured on GitHub runners and handles license approvals automatically
+    - name: Install Vulkan SDK via Chocolatey
       run: |
-        winget install LunarG.VulkanSDK --accept-source-agreements --accept-package-agreements
+        choco install vulkan-sdk -y
         echo "VULKAN_SDK=C:\VulkanSDK" >> $GITHUB_ENV
         echo "C:\VulkanSDK\Bin" >> $GITHUB_PATH
 
