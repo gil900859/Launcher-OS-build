@@ -15,7 +15,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Direct binary installation bypasses old APT packages entirely
     - name: Install Latest CMake (4.3.2)
       run: |
         wget https://github.com/Kitware/CMake/releases/download/v4.3.2/cmake-4.3.2-linux-x86_64.tar.gz
@@ -27,8 +26,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libvulkan-dev vulkan-tools
 
+    # Added policy fallback so legacy dependency code (like giflib) compiles safely on CMake 4.x
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
@@ -44,7 +44,6 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    # Download and extract CMake 4.3.2 binary directly for Windows x64 to bypass outdated runner version
     - name: Install Latest CMake (4.3.2)
       shell: bash
       run: |
@@ -52,15 +51,15 @@ jobs:
         unzip -q cmake-windows.zip
         echo "$GITHUB_WORKSPACE/cmake-4.3.2-windows-x86_64/bin" >> $GITHUB_PATH
 
-    # Chocolatey safely handles license approvals automatically for Vulkan
     - name: Install Vulkan SDK via Chocolatey
       run: |
         choco install vulkan-sdk -y
         echo "VULKAN_SDK=C:\VulkanSDK" >> $GITHUB_ENV
         echo "C:\VulkanSDK\Bin" >> $GITHUB_PATH
 
+    # Explicitly feeding the Vulkan location path directly to CMake so FindVulkan doesn't fail
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DVulkan_DIR="C:/VulkanSDK/lib/cmake/Vulkan" -DVULKAN_SDK="C:/VulkanSDK"
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
