@@ -15,16 +15,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Setup modern CMake to satisfy the CMake 4.2+ requirement
-    - name: Setup CMake
-      uses: jwlawrence/actions-setup-cmake@v1
-      with:
-        cmake-version: 'latest'
-
-    - name: Install Dependencies & Vulkan SDK
+    # Use Kitware's official APT repository to get the absolute latest CMake (4.x+)
+    - name: Install Latest CMake & Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libvulkan-dev vulkan-tools
+        sudo apt-get install -y software-properties-common lsb-release
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+        sudo apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libvulkan-dev vulkan-tools
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
@@ -43,11 +42,12 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    # Switched to a maintained Vulkan Action that doesn't use deprecated cache protocols
-    - name: Install Vulkan SDK
-      uses: asymmetric-efforts/setup-vulkan-sdk@v1
-      with:
-        vulkan-query-version: 'latest'
+    # Install official Vulkan SDK via Windows Package Manager (winget)
+    - name: Install Vulkan SDK via Winget
+      run: |
+        winget install LunarG.VulkanSDK --accept-source-agreements --accept-package-agreements
+        echo "VULKAN_SDK=C:\VulkanSDK" >> $GITHUB_ENV
+        echo "C:\VulkanSDK\Bin" >> $GITHUB_PATH
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
