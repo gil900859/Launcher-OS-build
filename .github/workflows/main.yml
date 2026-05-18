@@ -15,12 +15,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Direct binary installation bypasses APT package locks entirely
-    - name: Install Latest CMake (4.x+)
+    # Direct binary installation bypasses old APT packages entirely
+    - name: Install Latest CMake (4.3.2)
       run: |
-        wget https://github.com/Kitware/CMake/releases/download/v4.0.0-rc3/cmake-4.0.0-rc3-linux-x86_64.tar.gz
-        tar -xzf cmake-4.0.0-rc3-linux-x86_64.tar.gz
-        echo "$GITHUB_WORKSPACE/cmake-4.0.0-rc3-linux-x86_64/bin" >> $GITHUB_PATH
+        wget https://github.com/Kitware/CMake/releases/download/v4.3.2/cmake-4.3.2-linux-x86_64.tar.gz
+        tar -xzf cmake-4.3.2-linux-x86_64.tar.gz
+        echo "$GITHUB_WORKSPACE/cmake-4.3.2-linux-x86_64/bin" >> $GITHUB_PATH
 
     - name: Install Dependencies & Vulkan SDK
       run: |
@@ -44,7 +44,15 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    # Chocolatey is pre-configured on GitHub runners and handles license approvals automatically
+    # Download and extract CMake 4.3.2 binary directly for Windows x64 to bypass outdated runner version
+    - name: Install Latest CMake (4.3.2)
+      shell: bash
+      run: |
+        curl -L -o cmake-windows.zip https://github.com/Kitware/CMake/releases/download/v4.3.2/cmake-4.3.2-windows-x86_64.zip
+        unzip -q cmake-windows.zip
+        echo "$GITHUB_WORKSPACE/cmake-4.3.2-windows-x86_64/bin" >> $GITHUB_PATH
+
+    # Chocolatey safely handles license approvals automatically for Vulkan
     - name: Install Vulkan SDK via Chocolatey
       run: |
         choco install vulkan-sdk -y
